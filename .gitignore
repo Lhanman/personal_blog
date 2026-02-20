@@ -1,0 +1,9 @@
+.gradle/
+.kotlin/
+build/
+**/build/
+kotlin-js-store/
+local.properties
+.env
+*.iml
+.DS_Store
