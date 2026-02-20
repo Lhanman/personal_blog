@@ -1,19 +1,12 @@
 package com.personalblog.app.ui.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.personalblog.app.ui.DeprecatedUiComponent
 import com.personalblog.shared.dto.TagDto
 
+@Deprecated("默认标签芯片 UI 已弃用，等待设计稿实现。")
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun TagChip(tag: TagDto, onClick: () -> Unit) {
-    AssistChip(
-        onClick = onClick,
-        label = { Text("${tag.name} (${tag.postCount})") },
-        modifier = Modifier.padding(4.dp)
-    )
+    DeprecatedUiComponent("TagChip")
 }

@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import com.personalblog.app.ui.DeprecatedUiComponent
 import com.personalblog.shared.dto.PostDto
 
-@Deprecated("默认文章卡片 UI 已弃用，等待设计稿实现。")
+@Deprecated("默认搜索结果卡片 UI 已弃用，等待设计稿实现。")
 @Suppress("UNUSED_PARAMETER")
 @Composable
-fun PostCard(post: PostDto, onClick: () -> Unit) {
-    DeprecatedUiComponent("PostCard")
+fun SearchResultCard(post: PostDto, query: String, onClick: () -> Unit) {
+    DeprecatedUiComponent("SearchResultCard")
 }

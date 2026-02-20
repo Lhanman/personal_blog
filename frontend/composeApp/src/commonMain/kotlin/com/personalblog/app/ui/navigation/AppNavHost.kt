@@ -1,53 +1,29 @@
 package com.personalblog.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
+import com.personalblog.app.data.remote.AdminRemoteDataSource
+import com.personalblog.app.data.remote.CommentRemoteDataSource
+import com.personalblog.app.data.remote.PostRemoteDataSource
+import com.personalblog.app.data.remote.TagRemoteDataSource
+import com.personalblog.app.ui.DeprecatedUiScreen
+import com.personalblog.app.ui.theme.ThemeMode
+import com.personalblog.app.ui.viewmodel.AuthViewModel
 
+@Deprecated("默认导航 UI 已弃用，等待设计稿实现。")
+@Suppress("UNUSED_PARAMETER")
 @Composable
-fun AppNavHost(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = Screen.Home.route) {
-        composable(Screen.Home.route) {
-            // BlogListScreen()
-        }
-        composable(
-            route = Screen.PostDetail.route,
-            arguments = listOf(navArgument("id") { type = NavType.LongType })
-        ) {
-            // BlogReaderScreen()
-        }
-        composable(Screen.Search.route) {
-            // SearchScreen()
-        }
-        composable(Screen.Tags.route) {
-            // TagsWallScreen()
-        }
-        composable(
-            route = Screen.TagPosts.route,
-            arguments = listOf(navArgument("slug") { type = NavType.StringType })
-        ) {
-            // TagPostsScreen()
-        }
-        composable(Screen.About.route) {
-            // AboutScreen()
-        }
-        composable(Screen.Login.route) {
-            // LoginScreen()
-        }
-        composable(Screen.AdminPostList.route) {
-            // AdminPostListScreen()
-        }
-        composable(
-            route = Screen.AdminPostEdit.route,
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
-        ) {
-            // AdminPostEditScreen()
-        }
-        composable(Screen.AdminUserList.route) {
-            // AdminUserListScreen()
-        }
-    }
+fun AppNavHost(
+    navController: NavHostController,
+    postDataSource: PostRemoteDataSource,
+    tagDataSource: TagRemoteDataSource,
+    commentDataSource: CommentRemoteDataSource,
+    adminDataSource: AdminRemoteDataSource,
+    authViewModel: AuthViewModel,
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    DeprecatedUiScreen(name = "AppNavHost (Deprecated)", modifier = modifier)
 }
