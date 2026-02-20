@@ -1,9 +1,37 @@
+# Gradle
 .gradle/
 .kotlin/
 build/
 **/build/
+
+# Kotlin/Wasm local cache
 kotlin-js-store/
-local.properties
+
+# Local env/config
 .env
+local.properties
+google-services.json
+
+# IDE
 *.iml
+.idea/
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+
+# Android outputs
+captures/
+.externalNativeBuild/
+.cxx/
+*.aab
+*.apk
+output-metadata.json
+
+# Signing/profiling
+*.jks
+*.keystore
+*.hprof
+
+# Logs and OS files
+*.log
 .DS_Store
