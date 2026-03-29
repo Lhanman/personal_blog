@@ -11,26 +11,31 @@ import io.ktor.server.routing.*
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
-fun Application.module() {
-    val dbUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/personalblog"
-    val dbUser = System.getenv("DB_USER") ?: "postgres"
-    val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
-
-    DatabaseFactory.init(dbUrl, dbUser, dbPassword)
+fun Application.module(
+    initializeDatabase: Boolean = true,
+    postRepository: PostRepository = PostRepository(),
+    tagRepository: TagRepository = TagRepository(),
+    userRepository: UserRepository = UserRepository(),
+    commentRepository: CommentRepository = CommentRepository()
+) {
+    if (initializeDatabase) {
+        val dbHost = System.getenv("DB_HOST") ?: "localhost"
+        val dbPort = System.getenv("DB_PORT") ?: "5432"
+        val dbName = System.getenv("DB_NAME") ?: "personalblog"
+        val dbUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://$dbHost:$dbPort/$dbName"
+        val dbUser = System.getenv("DB_USER") ?: "postgres"
+        val dbPassword = System.getenv("DB_PASSWORD") ?: "postgres"
+        DatabaseFactory.init(dbUrl, dbUser, dbPassword)
+    }
 
     configurePlugins()
     configureAuth()
-
-    val postRepository = PostRepository()
-    val tagRepository = TagRepository()
-    val userRepository = UserRepository()
-    val commentRepository = CommentRepository()
 
     routing {
         postRoutes(postRepository)
         tagRoutes(tagRepository)
         authRoutes(userRepository)
         commentRoutes(commentRepository)
-        adminRoutes(postRepository, tagRepository, userRepository)
+        adminRoutes(postRepository, tagRepository, userRepository, commentRepository)
     }
 }

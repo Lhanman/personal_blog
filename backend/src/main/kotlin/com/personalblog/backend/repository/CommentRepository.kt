@@ -39,4 +39,8 @@ class CommentRepository {
     fun softDelete(id: Long): Boolean = transaction {
         CommentsTable.update({ CommentsTable.id eq id }) { it[CommentsTable.isDeleted] = true } > 0
     }
+
+    fun hardDelete(id: Long): Boolean = transaction {
+        CommentsTable.deleteWhere { CommentsTable.id eq id } > 0
+    }
 }

@@ -14,5 +14,6 @@ data class PostDto(
     val updatedAt: String? = null,
     val tags: List<TagDto> = emptyList(),
     val readingTimeMinutes: Int,
-    val published: Boolean = true
+    val published: Boolean = true,
+    val authorName: String? = null
 )

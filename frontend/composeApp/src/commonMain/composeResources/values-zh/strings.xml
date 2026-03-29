@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_home">首页</string>
+    <string name="nav_posts">文章</string>
+    <string name="nav_tags">标签</string>
+    <string name="nav_about">关于</string>
+    <string name="nav_admin">管理</string>
+    <string name="nav_login">登录</string>
+    <string name="nav_logout">登出</string>
+    <string name="nav_search">搜索</string>
+    <string name="header_back">返回</string>
+    <string name="screen_home">首页</string>
+    <string name="screen_posts">文章</string>
+    <string name="screen_article">文章详情</string>
+    <string name="screen_search">搜索</string>
+    <string name="screen_tags">标签</string>
+    <string name="screen_tag_posts">标签文章</string>
+    <string name="screen_about">关于</string>
+    <string name="screen_login">登录</string>
+    <string name="screen_admin_posts">文章管理</string>
+    <string name="screen_admin_edit_post">编辑文章</string>
+    <string name="screen_admin_users">用户管理</string>
+    <string name="window_minimize">最小化窗口</string>
+    <string name="window_maximize">最大化窗口</string>
+    <string name="window_restore">还原窗口</string>
+    <string name="window_close">关闭窗口</string>
+</resources>

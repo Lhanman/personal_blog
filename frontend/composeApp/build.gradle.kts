@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -10,6 +11,8 @@ plugins {
 }
 
 kotlin {
+    jvm("desktop")
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
@@ -19,9 +22,6 @@ kotlin {
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-
-    macosX64()
-    macosArm64()
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -55,6 +55,7 @@ kotlin {
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
 
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
@@ -67,12 +68,18 @@ kotlin {
             implementation(libs.navigation.compose)
 
             implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.multiplatform.settings.coroutines)
+
+            implementation(libs.multiplatform.markdown.renderer)
+            implementation(libs.multiplatform.markdown.renderer.m3)
+            implementation(libs.multiplatform.markdown.renderer.coil3)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.test)
         }
 
         androidMain.dependencies {
@@ -80,6 +87,14 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
             implementation(compose.preview)
+        }
+
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.kotlinx.coroutines.swing)
+            }
         }
 
         val iosMain by creating {
@@ -92,17 +107,21 @@ kotlin {
         iosArm64Main.get().dependsOn(iosMain)
         iosSimulatorArm64Main.get().dependsOn(iosMain)
 
-        val macosMain by creating {
-            dependsOn(commonMain.get())
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
-        }
-        macosX64Main.get().dependsOn(macosMain)
-        macosArm64Main.get().dependsOn(macosMain)
-
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
+            implementation(devNpm("copy-webpack-plugin", "12.0.2"))
+        }
+    }
+}
+
+compose.desktop {
+    application {
+        mainClass = "com.personalblog.app.MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe)
+            packageName = "PersonalBlog"
+            packageVersion = "1.0.0"
         }
     }
 }
@@ -110,6 +129,10 @@ kotlin {
 android {
     namespace = "com.personalblog.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.personalblog.app"
@@ -135,4 +158,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+tasks.withType<org.gradle.api.tasks.Copy>().configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

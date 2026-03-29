@@ -9,7 +9,7 @@ import kotlinx.datetime.Clock
 
 class PostRepository {
 
-    private fun rowToDto(row: ResultRow, tags: List<TagDto> = emptyList()): PostDto {
+    private fun rowToDto(row: ResultRow, tags: List<TagDto> = emptyList(), authorName: String? = null): PostDto {
         val content = row[PostsTable.content]
         val wordCount = content.split("\\s+".toRegex()).size
         val readingTime = maxOf(1, wordCount / 200)
@@ -24,7 +24,8 @@ class PostRepository {
             updatedAt = row[PostsTable.updatedAt].toString(),
             tags = tags,
             readingTimeMinutes = readingTime,
-            published = row[PostsTable.published]
+            published = row[PostsTable.published],
+            authorName = authorName
         )
     }
 
@@ -35,46 +36,113 @@ class PostRepository {
             .map { TagDto(it[TagsTable.id], it[TagsTable.name], it[TagsTable.slug]) }
     }
 
+    private fun batchGetTags(postIds: List<Long>): Map<Long, List<TagDto>> {
+        if (postIds.isEmpty()) return emptyMap()
+        return (PostTagsTable innerJoin TagsTable)
+            .select(PostTagsTable.postId, TagsTable.id, TagsTable.name, TagsTable.slug)
+            .where { PostTagsTable.postId inList postIds }
+            .groupBy({ it[PostTagsTable.postId] }) { TagDto(it[TagsTable.id], it[TagsTable.name], it[TagsTable.slug]) }
+    }
+
+    private fun batchGetAuthorNames(authorIds: Set<Long>): Map<Long, String> {
+        if (authorIds.isEmpty()) return emptyMap()
+        return UsersTable.select(UsersTable.id, UsersTable.username)
+            .where { UsersTable.id inList authorIds }
+            .associate { it[UsersTable.id] to it[UsersTable.username] }
+    }
+
+    private fun getAuthorName(authorId: Long?): String? = transaction {
+        if (authorId == null) return@transaction null
+        UsersTable.select(UsersTable.username)
+            .where { UsersTable.id eq authorId }
+            .singleOrNull()?.get(UsersTable.username)
+    }
+
     fun findAll(page: Int, size: Int, publishedOnly: Boolean = true): PagedResponse<PostDto> = transaction {
         val query = PostsTable.selectAll()
         if (publishedOnly) query.where { PostsTable.published eq true }
         val total = query.count()
-        val items = query
+        val rows = query
             .orderBy(PostsTable.createdAt, SortOrder.DESC)
             .limit(size, offset = ((page - 1) * size).toLong())
-            .map { row ->
-                val tags = getTagsForPost(row[PostsTable.id])
-                rowToDto(row, tags).copy(content = null)
-            }
+            .toList()
+
+        val postIds = rows.map { it[PostsTable.id] }
+        val tagsByPost = batchGetTags(postIds)
+        val authorIds = rows.mapNotNull { it[PostsTable.authorId] }.toSet()
+        val authorNames = batchGetAuthorNames(authorIds)
+
+        val items = rows.map { row ->
+            rowToDto(row, tagsByPost[row[PostsTable.id]] ?: emptyList(), authorNames[row[PostsTable.authorId]]).copy(content = null)
+        }
         PagedResponse(items, total, page, size, ((total + size - 1) / size).toInt())
     }
 
     fun findById(id: Long): PostDto? = transaction {
         PostsTable.selectAll().where { PostsTable.id eq id }.singleOrNull()?.let { row ->
-            rowToDto(row, getTagsForPost(id))
+            val authorName = getAuthorName(row[PostsTable.authorId])
+            rowToDto(row, getTagsForPost(id), authorName)
         }
     }
 
     fun findBySlug(slug: String): PostDto? = transaction {
         PostsTable.selectAll().where { PostsTable.slug eq slug }.singleOrNull()?.let { row ->
-            rowToDto(row, getTagsForPost(row[PostsTable.id]))
+            val authorName = getAuthorName(row[PostsTable.authorId])
+            rowToDto(row, getTagsForPost(row[PostsTable.id]), authorName)
         }
     }
 
     fun search(query: String, page: Int, size: Int): PagedResponse<PostDto> = transaction {
+        // 使用 ILIKE 进行搜索（兼容 H2 测试数据库）
+        // 生产环境使用 PostgreSQL 的 search_vector 全文索引
         val q = PostsTable.selectAll().where {
             (PostsTable.title.lowerCase() like "%${query.lowercase()}%") or
             (PostsTable.summary.lowerCase() like "%${query.lowercase()}%") or
             (PostsTable.content.lowerCase() like "%${query.lowercase()}%")
         }.andWhere { PostsTable.published eq true }
+
         val total = q.count()
         val items = q.orderBy(PostsTable.createdAt, SortOrder.DESC)
             .limit(size, offset = ((page - 1) * size).toLong())
-            .map { row -> rowToDto(row, getTagsForPost(row[PostsTable.id])).copy(content = null) }
+            .map { row ->
+                val authorName = getAuthorName(row[PostsTable.authorId])
+                rowToDto(row, getTagsForPost(row[PostsTable.id]), authorName).copy(content = null)
+            }
         PagedResponse(items, total, page, size, ((total + size - 1) / size).toInt())
     }
 
-    fun create(title: String, slug: String, summary: String, content: String, coverImageUrl: String?, tagIds: List<Long>, authorId: Long): PostDto = transaction {
+    // PostgreSQL 全文搜索版本（仅在生产环境使用）
+    fun searchWithFullText(query: String, page: Int, size: Int): PagedResponse<PostDto> = transaction {
+        val searchQuery = query.trim().split("\\s+".toRegex()).joinToString(" & ")
+
+        val q = PostsTable.selectAll().where {
+            CustomSqlExpressionBuilder.searchVectorMatch(searchQuery)
+        }.andWhere { PostsTable.published eq true }
+
+        val total = q.count()
+        val items = q.orderBy(PostsTable.createdAt, SortOrder.DESC)
+            .limit(size, offset = ((page - 1) * size).toLong())
+            .map { row ->
+                val authorName = getAuthorName(row[PostsTable.authorId])
+                rowToDto(row, getTagsForPost(row[PostsTable.id]), authorName).copy(content = null)
+            }
+        PagedResponse(items, total, page, size, ((total + size - 1) / size).toInt())
+    }
+
+    // 自定义 SQL 表达式构建器
+    private object CustomSqlExpressionBuilder {
+        fun searchVectorMatch(query: String): Op<Boolean> {
+            return object : Op<Boolean>() {
+                override fun toQueryBuilder(queryBuilder: QueryBuilder) {
+                    queryBuilder.append("search_vector @@ to_tsquery('english', '")
+                    queryBuilder.append(query.replace("'", "''"))
+                    queryBuilder.append("')")
+                }
+            }
+        }
+    }
+
+    fun create(title: String, slug: String, summary: String, content: String, coverImageUrl: String?, tagIds: List<Long>, authorId: Long, published: Boolean = false): PostDto = transaction {
         val now = Clock.System.now()
         val id = PostsTable.insert {
             it[PostsTable.title] = title
@@ -82,7 +150,7 @@ class PostRepository {
             it[PostsTable.summary] = summary
             it[PostsTable.content] = content
             it[PostsTable.coverImageUrl] = coverImageUrl
-            it[PostsTable.published] = false
+            it[PostsTable.published] = published
             it[PostsTable.authorId] = authorId
             it[PostsTable.createdAt] = now
             it[PostsTable.updatedAt] = now

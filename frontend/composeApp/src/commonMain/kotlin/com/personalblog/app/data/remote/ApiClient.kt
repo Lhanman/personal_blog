@@ -1,6 +1,7 @@
 package com.personalblog.app.data.remote
 
 import com.personalblog.shared.dto.*
+import com.personalblog.app.logging.LoggerFactory
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -11,15 +12,26 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class ApiClient(
-    val baseUrl: String = "http://localhost:8080",
+    val baseUrl: String = ApiConfig.apiBaseUrl,
     val tokenProvider: () -> String?
 ) {
+    private val logger = LoggerFactory.getLogger("ApiClient")
+
     val http = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
         install(Logging) {
             level = LogLevel.INFO
+            logger = object : Logger {
+                override fun log(message: String) {
+                    this@ApiClient.logger.debug(
+                        message = message,
+                        feature = "network",
+                        extras = mapOf("baseUrl" to baseUrl)
+                    )
+                }
+            }
         }
     }
 

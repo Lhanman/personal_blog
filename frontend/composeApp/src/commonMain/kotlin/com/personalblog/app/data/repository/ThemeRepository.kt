@@ -9,8 +9,12 @@ class ThemeRepository(private val settings: Settings) {
     }
 
     fun getThemeMode(): ThemeMode {
-        val value = settings.getStringOrNull(KEY_THEME) ?: return ThemeMode.SYSTEM
-        return ThemeMode.valueOf(value)
+        val value = settings.getStringOrNull(KEY_THEME) ?: return ThemeMode.DARK
+        return try {
+            ThemeMode.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            ThemeMode.DARK
+        }
     }
 
     fun saveThemeMode(mode: ThemeMode) {

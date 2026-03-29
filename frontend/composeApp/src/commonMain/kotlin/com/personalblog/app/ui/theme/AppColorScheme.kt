@@ -13,9 +13,9 @@ private val LightOnSurface = Color(0xFF1E293B)
 private val LightSecondary = Color(0xFF64748B)
 
 private val DarkPrimary = Color(0xFFE2E8F0)
-private val DarkOnPrimary = Color(0xFF0F172A)
-private val DarkBackground = Color(0xFF0F172A)
-private val DarkSurface = Color(0xFF1E293B)
+private val DarkOnPrimary = Color(0xFF212737)
+private val DarkBackground = Color(0xFF212737)
+private val DarkSurface = Color(0xFF2A3142)
 private val DarkOnSurface = Color(0xFFE2E8F0)
 private val DarkSecondary = Color(0xFF94A3B8)
 

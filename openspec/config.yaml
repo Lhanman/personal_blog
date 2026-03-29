@@ -1,26 +1,87 @@
 schema: spec-driven
+
 context: |
   语言：中文（简体）
   所有产出物必须用简体中文撰写。
-  - Keep technical terms like "API", "REST", "GraphQL" in English
-  - Code examples and file paths remain in English
-  Tech stack: KMP,Ktor,Compose
+  技术术语（API、REST、JWT、MVVM、ViewModel、Composable 等）保持英文。
+  代码示例和文件路径保持英文。
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+  ## 项目概述
+  跨平台个人博客系统，使用 Kotlin Multiplatform (KMP) + Compose Multiplatform 构建。
+  支持平台：Android、iOS、macOS、Web (WASM)。
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  ## 技术栈
+  - 后端：Kotlin + Ktor Server + PostgreSQL + Exposed ORM + Flyway + JWT 认证
+  - 前端：Compose Multiplatform + Material3 + Jetpack Navigation Compose
+  - 共享：KMP shared 模块（DTO 定义，前后端共用）
+  - 网络：Ktor Client（跨平台，OkHttp/Darwin/JS 引擎）
+  - 构建：Gradle 8.10.2 + AGP 8.5.0，依赖版本统一在 gradle/libs.versions.toml
+
+  ## 项目结构
+  - backend/          → Ktor 后端（JVM），Gradle 项目名 :backend
+  - shared/           → 共享 DTO 模块，Gradle 项目名 :shared
+  - frontend/composeApp/ → Compose 前端，Gradle 项目名 :composeApp（注意不是 :frontend:composeApp）
+
+  ## 前端架构（MVVM）
+  - Screen（View）→ ViewModel → Repository → RemoteDataSource
+  - 共享代码在 commonMain，平台特定代码通过 expect/actual 实现
+  - 主题系统：AppColorScheme.kt（AstroPaper 风格配色）+ AppTypography.kt（Noto Sans SC 字体）
+  - 响应式布局：BoxWithConstraints + 768dp 断点，桌面端内容区最大宽度 768dp 居中
+
+  ## 后端架构（分层）
+  - Routes 层 → Repository 层 → Exposed ORM → PostgreSQL
+  - JWT 认证：jwt-auth 配置，token 含 userId 和 role
+  - 数据库迁移：Flyway，文件在 backend/src/main/resources/db/migration/
+  - 命名格式：V{version}__{description}.sql
+
+  ## 已实现的核心能力（specs/）
+  - blog-list：首页，Hero Section + Featured/Recent 分区，分页加载
+  - blog-reader：文章详情，Markdown 渲染 + 目录侧边栏 + 评论区
+  - blog-search：全文搜索，实时建议（300ms 防抖）+ 标签过滤
+  - tags-wall：标签墙 + 按标签筛选文章列表
+  - blog-ui-components：PostCard（Default/Compact/Featured 变体）、HeroSection、SectionTitle、EmptyState
+  - responsive-layout：响应式布局断点系统
+
+  ## 开发规范
+  - 组件采用三层架构：原子组件 → 分子组件 → 页面组件（Atomic Design）
+  - 主题适配：优先使用 Material3 语义化颜色（colorScheme.onSurface 等），避免硬编码颜色
+  - inline 函数不能访问 private/internal 属性，需用 public
+  - expect/actual 函数注解必须完全匹配（包括 @Composable）
+  - PagedResponse 使用 page 字段（不是 currentPage）
+  - Tag 对象使用 tag.name（不是直接用 tag）
+
+  ## 构建命令参考
+  - 后端运行：./gradlew :backend:run
+  - Web 开发：./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+  - Web 构建：./gradlew :composeApp:wasmJsBrowserDistribution
+  - 全量测试：./gradlew test
+  - Yarn lock 更新：./gradlew kotlinUpgradeYarnLock
+
+  ## 部署
+  Docker Compose 部署：PostgreSQL + Ktor Backend + Nginx 反向代理
+  前端静态文件由 Nginx 托管，API 通过 /api/v1 反向代理到后端 :8080
+
+rules:
+  proposal:
+    - 必须包含 "Why"、"What Changes"、"Capabilities"、"Impact" 四个章节
+    - 明确列出新增/修改的 Capability 名称，与 specs/ 目录对应
+    - 说明影响范围（前端/后端/共享模块/部署）
+    - 控制在 500 字以内，聚焦变更意图而非实现细节
+
+  design:
+    - 必须包含 "Context"、"Goals / Non-Goals"、"Decisions"、"Risks / Trade-offs" 四个章节
+    - 每个 Decision 需说明：决策内容、理由、替代方案
+    - 涉及跨平台代码时，说明 expect/actual 策略
+    - 涉及 UI 时，说明主题适配方案（深色/浅色）
+
+  spec:
+    - 使用 SHALL 表达强制需求
+    - 每个 Requirement 下包含若干 Scenario，格式为 WHEN/THEN
+    - Scenario 描述用户可观察的行为，不涉及实现细节
+    - 涉及 UI 组件时，引用已有组件名称（PostCard、EmptyState 等）
+
+  tasks:
+    - 每个任务对应单一文件或单一职责，粒度控制在 1-2 小时内
+    - 任务按依赖顺序排列（原子组件 → 分子组件 → 页面 → 集成验证）
+    - 最后一组任务必须包含编译验证和测试运行
+    - 使用 Gradle 项目名 :composeApp（不是 :frontend:composeApp）

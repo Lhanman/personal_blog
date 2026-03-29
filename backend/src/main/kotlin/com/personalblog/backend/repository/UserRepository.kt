@@ -3,6 +3,7 @@ package com.personalblog.backend.repository
 import com.personalblog.backend.db.UsersTable
 import com.personalblog.shared.dto.UserDto
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlinx.datetime.Clock
 
@@ -41,5 +42,9 @@ class UserRepository {
 
     fun updateRole(id: Long, role: String): Boolean = transaction {
         UsersTable.update({ UsersTable.id eq id }) { it[UsersTable.role] = role } > 0
+    }
+
+    fun delete(id: Long): Boolean = transaction {
+        UsersTable.deleteWhere { UsersTable.id eq id } > 0
     }
 }

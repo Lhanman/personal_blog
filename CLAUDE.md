@@ -96,6 +96,25 @@ personal_blog/
 
 ## 构建和运行命令
 
+### 快速开发脚本
+项目提供了便捷的开发脚本：
+```bash
+# 启动完整开发环境 (PostgreSQL + 后端 + Web 前端)
+./start-dev.sh
+
+# 停止开发环境
+./stop-dev.sh
+
+# 查看系统状态
+./status.sh
+
+# 测试 API 端点
+./test-api.sh
+
+# 数据库管理
+./db-manager.sh
+```
+
 ### 后端开发
 ```bash
 # 本地运行后端 (需要 PostgreSQL)
@@ -215,11 +234,48 @@ docker compose down
   - `commonMain` 中声明 `expect` 函数/类
   - `androidMain`/`iosMain`/`wasmJsMain` 中实现 `actual` 函数/类
 
+### API 地址配置
+API 基础地址在 `frontend/composeApp/src/commonMain/kotlin/com/personalblog/app/data/remote/PlatformConfig.kt` 中配置：
+- Android 模拟器：`http://10.0.2.2:8080`
+- 生产环境：修改为实际域名
+
+开发环境允许明文 HTTP，配置在 `frontend/composeApp/src/androidMain/res/xml/network_security_config.xml`，生产环境需移除。
+
+### 常见问题排查
+- **后端启动失败/数据库连接错误**：确保 PostgreSQL 已启动：`brew services start postgresql@15`
+- **Android 无法连接后端**：检查 API 地址是否为 `http://10.0.2.2:8080`，以及网络权限配置
+- **登录 401 错误**：通过 SQL 手动设置角色：`UPDATE users SET role = 'ADMIN' WHERE email = 'admin@blog.com';`
+- **后端日志**：`tail -f /tmp/backend.log`
+
 ### Gradle 版本目录
 依赖版本统一在 `gradle/libs.versions.toml` 中管理，使用 `libs.` 前缀引用
 
+## API 端点概览
+
+### 公开接口
+- `GET /api/v1/posts` - 获取文章列表（分页）
+- `GET /api/v1/posts/{id}` - 获取文章详情
+- `GET /api/v1/posts/search?q={query}` - 搜索文章
+- `GET /api/v1/tags` - 获取所有标签
+- `GET /api/v1/tags/{slug}` - 获取标签下的文章
+- `GET /api/v1/comments/{postId}` - 获取文章评论
+
+### 认证接口
+- `POST /api/v1/auth/register` - 用户注册
+- `POST /api/v1/auth/login` - 用户登录
+
+### 需要认证
+- `POST /api/v1/comments` - 发表评论
+
+### 管理员接口
+- `POST /api/v1/admin/posts` - 创建文章
+- `PUT /api/v1/admin/posts/{id}` - 更新文章
+- `DELETE /api/v1/admin/posts/{id}` - 删除文章
+- `GET /api/v1/admin/users` - 获取用户列表
+- `PUT /api/v1/admin/users/{id}/role` - 更新用户角色
+
 ## 默认管理员账号
-- Email: admin@example.com
+- Email: admin@blog.com
 - Password: admin123
 
 (由 `docker/init.sql` 初始化)

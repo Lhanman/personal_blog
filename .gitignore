@@ -9,6 +9,7 @@ kotlin-js-store/
 
 # Local env/config
 .env
+.env.local
 local.properties
 google-services.json
 

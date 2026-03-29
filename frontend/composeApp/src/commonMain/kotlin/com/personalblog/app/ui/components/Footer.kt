@@ -1,0 +1,28 @@
+package com.personalblog.app.ui.components
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
+@Composable
+fun Footer(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(vertical = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Copyright © ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year} | All rights reserved.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
+}
