@@ -8,6 +8,7 @@ import com.personalblog.backend.db.UsersTable
 import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -19,6 +20,11 @@ object TestDb {
         )
         transaction {
             SchemaUtils.create(UsersTable, PostsTable, TagsTable, PostTagsTable, CommentsTable)
+            if (TransactionManager.current().db.vendor.equals("h2", ignoreCase = true)) {
+                exec("ALTER TABLE posts ADD COLUMN IF NOT EXISTS search_text TEXT")
+                exec("ALTER TABLE posts ADD COLUMN IF NOT EXISTS search_vector VARCHAR(4096)")
+                exec("CREATE INDEX IF NOT EXISTS posts_published_created_idx ON posts(published, created_at DESC)")
+            }
         }
     }
 

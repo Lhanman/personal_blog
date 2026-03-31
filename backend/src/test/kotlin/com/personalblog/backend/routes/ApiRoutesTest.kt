@@ -1,10 +1,10 @@
 package com.personalblog.backend.routes
 
 import com.personalblog.backend.TestDb
-import com.personalblog.backend.module
 import com.personalblog.backend.db.PostTagsTable
 import com.personalblog.backend.db.PostsTable
 import com.personalblog.backend.db.TagsTable
+import com.personalblog.backend.module
 import com.personalblog.backend.repository.CommentRepository
 import com.personalblog.backend.repository.PostRepository
 import com.personalblog.backend.repository.TagRepository
@@ -85,6 +85,48 @@ class ApiRoutesTest {
         assertTrue(body.isNotEmpty())
         assertEquals("kotlin", body.first().slug)
         assertEquals(1, body.first().postCount)
+    }
+
+    @Test
+    fun `GET search returns empty result for blank query`() = testApplication {
+        application {
+            module(
+                initializeDatabase = false,
+                postRepository = PostRepository(),
+                tagRepository = TagRepository(),
+                userRepository = UserRepository(),
+                commentRepository = CommentRepository()
+            )
+        }
+
+        val response = client.get("/api/v1/posts/search?q=%20%20&page=-1&size=999")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = json.decodeFromString<PagedResponse<PostDto>>(response.bodyAsText())
+        assertTrue(body.items.isEmpty())
+        assertEquals(0L, body.total)
+        assertEquals(1, body.page)
+        assertEquals(10, body.size)
+    }
+
+    @Test
+    fun `GET search returns empty result for unmatched query`() = testApplication {
+        application {
+            module(
+                initializeDatabase = false,
+                postRepository = PostRepository(),
+                tagRepository = TagRepository(),
+                userRepository = UserRepository(),
+                commentRepository = CommentRepository()
+            )
+        }
+
+        val response = client.get("/api/v1/posts/search?q=does-not-exist")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = json.decodeFromString<PagedResponse<PostDto>>(response.bodyAsText())
+        assertTrue(body.items.isEmpty())
+        assertEquals(0L, body.total)
     }
 
     @Test

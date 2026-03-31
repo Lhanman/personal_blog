@@ -2,7 +2,7 @@ package com.personalblog.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.personalblog.app.data.remote.TagRemoteDataSource
+import com.personalblog.app.data.repository.TagRepository
 import com.personalblog.shared.dto.TagDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +16,7 @@ data class TagsState(
 )
 
 class TagsViewModel(
-    private val tagDataSource: TagRemoteDataSource
+    private val tagRepository: TagRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(TagsState())
     val state: StateFlow<TagsState> = _state.asStateFlow()
@@ -29,7 +29,7 @@ class TagsViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val tags = tagDataSource.getTags()
+                val tags = tagRepository.getTags()
                 _state.value = _state.value.copy(tags = tags, isLoading = false)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.message)

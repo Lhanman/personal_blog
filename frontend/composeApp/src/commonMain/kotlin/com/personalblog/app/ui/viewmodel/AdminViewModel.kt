@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.personalblog.app.data.remote.AdminPostPayload
 import com.personalblog.app.data.remote.AdminRemoteDataSource
-import com.personalblog.app.data.remote.TagRemoteDataSource
 import com.personalblog.app.data.repository.PostRepository
+import com.personalblog.app.data.repository.TagRepository
 import com.personalblog.app.logging.LoggerFactory
 import com.personalblog.shared.dto.PostDto
 import com.personalblog.shared.dto.TagDto
@@ -37,7 +37,7 @@ data class AdminState(
 
 class AdminViewModel(
     private val postDataSource: PostRepository,
-    private val tagDataSource: TagRemoteDataSource,
+    private val tagRepository: TagRepository,
     private val adminDataSource: AdminRemoteDataSource
 ) : ViewModel() {
     private val logger = LoggerFactory.getLogger("AdminViewModel")
@@ -67,7 +67,7 @@ class AdminViewModel(
 
     fun loadTags() {
         viewModelScope.launch {
-            runCatching { tagDataSource.getTags() }
+            runCatching { tagRepository.getTags() }
                 .onSuccess { tags ->
                     logger.debug("admin tags loaded", feature = "admin", extras = mapOf("count" to tags.size.toString()))
                     _state.value = _state.value.copy(tags = tags)

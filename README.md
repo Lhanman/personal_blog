@@ -8,7 +8,7 @@
 - 🎨 **现代 UI**: 使用 Compose Multiplatform 和 Material Design 3
 - 🔐 **用户认证**: JWT 认证，支持管理员和普通用户角色
 - 📝 **Markdown 支持**: 文章内容使用 Markdown 编写和渲染
-- 🔍 **全文搜索**: 基于 PostgreSQL 的全文搜索功能
+- 🔍 **中文搜索优化**: 基于 PostgreSQL `pg_trgm` + 分层检索的中文友好搜索
 - 🏷️ **标签系统**: 文章标签分类和筛选
 - 💬 **评论系统**: 用户可以对文章发表评论
 - 🌓 **主题切换**: 支持浅色/深色/跟随系统主题
@@ -45,6 +45,7 @@
 - JDK 17+
 - Gradle 8.10+
 - PostgreSQL 15+ (或使用 Docker)
+- PostgreSQL 需允许启用内置扩展 `pg_trgm`
 - Android Studio (用于 Android 开发)
 - Xcode (用于 iOS/macOS 开发，仅 macOS)
 
@@ -177,6 +178,13 @@ docker compose up -d
 ./status.sh
 ```
 
+### 搜索说明
+
+- 生产环境搜索优先使用 PostgreSQL `pg_trgm` 与相关性排序，兼容中文关键词、模糊匹配和子串召回
+- 数据库 migration 会自动执行 `CREATE EXTENSION IF NOT EXISTS pg_trgm`
+- 运行在 H2 等非 PostgreSQL 环境时，后端会自动降级到兼容匹配逻辑，无需额外配置
+- 如需验证查询性能，建议对搜索 SQL 执行 `EXPLAIN ANALYZE`
+
 详细开发指南请查看 [DEV_GUIDE.md](docs/DEV_GUIDE.md)
 
 ## 🏗️ 项目结构
@@ -226,7 +234,7 @@ personal_blog/
 
 - `GET /api/v1/posts` - 获取文章列表（分页）
 - `GET /api/v1/posts/{id}` - 获取文章详情
-- `GET /api/v1/posts/search?q={query}` - 搜索文章
+- `GET /api/v1/posts/search?q={query}` - 搜索文章（相关性优先，发布时间兜底）
 - `GET /api/v1/tags` - 获取所有标签
 - `GET /api/v1/tags/{slug}` - 获取标签下的文章
 - `GET /api/v1/comments/{postId}` - 获取文章评论

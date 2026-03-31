@@ -24,6 +24,7 @@ import com.personalblog.app.ui.screen.AdminPostListScreen
 import com.personalblog.app.ui.screen.AdminUserListScreen
 import com.personalblog.app.ui.screen.BlogListScreen
 import com.personalblog.app.ui.screen.BlogReaderScreen
+import com.personalblog.app.ui.screen.HomeScreen
 import com.personalblog.app.ui.screen.LoginScreen
 import com.personalblog.app.ui.screen.SearchScreen
 import com.personalblog.app.ui.screen.TagPostsScreen
@@ -34,6 +35,7 @@ import com.personalblog.app.ui.viewmodel.AuthViewModel
 import com.personalblog.app.ui.viewmodel.BlogListViewModel
 import com.personalblog.app.ui.viewmodel.BlogReaderViewModel
 import com.personalblog.app.ui.viewmodel.CommentViewModel
+import com.personalblog.app.ui.viewmodel.HomeViewModel
 import com.personalblog.app.ui.viewmodel.SearchViewModel
 import com.personalblog.app.ui.viewmodel.TagPostsViewModel
 import com.personalblog.app.ui.viewmodel.TagsViewModel
@@ -98,8 +100,8 @@ fun AppNavHost(
             modifier = Modifier.fillMaxSize()
         ) {
             composable(Screen.Home.route) {
-                val vm = remember(postDataSource) { BlogListViewModel(postDataSource) }
-                BlogListScreen(
+                val vm = remember(postDataSource, tagDataSource) { HomeViewModel(postDataSource, tagDataSource) }
+                HomeScreen(
                     viewModel = vm,
                     onPostClick = { navController.navigate(Screen.PostDetail.createRoute(it)) },
                     onAllPostsClick = { navController.navigate(Screen.Posts.route) { launchSingleTop = true } }

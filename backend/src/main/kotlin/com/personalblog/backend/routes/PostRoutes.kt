@@ -1,10 +1,14 @@
 package com.personalblog.backend.routes
 
 import com.personalblog.backend.repository.PostRepository
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import com.personalblog.shared.dto.PagedResponse
+import com.personalblog.shared.dto.PostDto
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.route
 
 fun Route.postRoutes(postRepository: PostRepository) {
     route("/api/v1/posts") {
@@ -15,21 +19,18 @@ fun Route.postRoutes(postRepository: PostRepository) {
         }
 
         get("/search") {
-            val q = call.request.queryParameters["q"] ?: return@get call.respond(
+            val rawQuery = call.request.queryParameters["q"] ?: return@get call.respond(
                 HttpStatusCode.BadRequest, mapOf("error" to "Missing query parameter 'q'")
             )
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val size = call.request.queryParameters["size"]?.toIntOrNull() ?: 10
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.takeIf { it > 0 } ?: 1
+            val size = call.request.queryParameters["size"]?.toIntOrNull()?.takeIf { it in 1..50 } ?: 10
+            val query = rawQuery.trim()
 
-            // 根据环境选择搜索方法
-            // 生产环境使用 PostgreSQL 全文搜索，开发/测试环境使用 ILIKE
-            val useFullTextSearch = System.getenv("USE_FULLTEXT_SEARCH")?.toBoolean() ?: false
-            val result = if (useFullTextSearch) {
-                postRepository.searchWithFullText(q, page, size)
-            } else {
-                postRepository.search(q, page, size)
+            if (query.isBlank()) {
+                return@get call.respond(PagedResponse<PostDto>(emptyList(), 0, page, size, 0))
             }
-            call.respond(result)
+
+            call.respond(postRepository.search(query, page, size))
         }
 
         get("/{id}") {

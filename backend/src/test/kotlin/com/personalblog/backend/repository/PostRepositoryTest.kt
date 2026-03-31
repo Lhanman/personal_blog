@@ -8,6 +8,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -133,6 +134,73 @@ class PostRepositoryTest {
 
         assertEquals(1, response.items.size)
         assertEquals("kotlin-coroutines", response.items.first().slug)
+    }
+
+    @Test
+    fun `search matches chinese content`() {
+        val authorId = TestDb.insertUser()
+        insertPost(
+            title = "Jetpack Compose 入门",
+            slug = "compose-intro",
+            summary = "UI 框架",
+            content = "本文介绍中文搜索优化策略",
+            published = true,
+            authorId = authorId,
+            createdAt = Clock.System.now()
+        )
+
+        val response = repository.search(query = "中文搜索", page = 1, size = 10)
+
+        assertEquals(1, response.items.size)
+        assertEquals("compose-intro", response.items.first().slug)
+    }
+
+    @Test
+    fun `search prioritizes title match over newer content match`() {
+        val authorId = TestDb.insertUser()
+        val now = Clock.System.now()
+
+        insertPost(
+            title = "中文搜索优化",
+            slug = "title-match",
+            summary = "标题直接命中",
+            content = "其他内容",
+            published = true,
+            authorId = authorId,
+            createdAt = now
+        )
+        insertPost(
+            title = "数据库调优",
+            slug = "content-match",
+            summary = "性能分析",
+            content = "本文讨论中文搜索优化的降级路径",
+            published = true,
+            authorId = authorId,
+            createdAt = now.plus(1, DateTimeUnit.HOUR, TimeZone.UTC)
+        )
+
+        val response = repository.search(query = "中文搜索优化", page = 1, size = 10)
+
+        assertEquals(listOf("title-match", "content-match"), response.items.map { it.slug })
+    }
+
+    @Test
+    fun `blank query returns empty result`() {
+        val authorId = TestDb.insertUser()
+        insertPost(
+            title = "Some title",
+            slug = "some-title",
+            summary = "summary",
+            content = "content",
+            published = true,
+            authorId = authorId,
+            createdAt = Clock.System.now()
+        )
+
+        val response = repository.search(query = "   ", page = 1, size = 10)
+
+        assertTrue(response.items.isEmpty())
+        assertEquals(0L, response.total)
     }
 
     private fun insertTag(name: String, slug: String): Long = transaction {
